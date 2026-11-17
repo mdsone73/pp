@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="bn">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Photo Studio - Admin Panel</title>
+  <!-- Supabase JS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --primary: #7255D9;
+      --primary-dark: #593EB8;
+      --bg: #F4F5FA;
+      --card: #FFFFFF;
+      --text: #202039;
+      --muted: #77778A;
+      --border: #E2E4F0;
+      --danger: #E53935;
+      --success: #2E7D32;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      padding-bottom: 50px;
+    }
+
+    /* Header */
+    header {
+      background: var(--primary);
+      color: white;
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    header h1 {
+      font-size: 20px;
+    }
+
+    .btn-logout {
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      color: white;
+      padding: 8px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .btn-logout:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    /* Container */
+    .container {
+      max-width: 960px;
+      margin: 24px auto;
+      padding: 0 16px;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      border: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+
+    h2 {
+      font-size: 18px;
+      margin-bottom: 16px;
+      color: var(--primary);
+    }
+
+    /* Form Elements */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 650px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .full-width {
+      grid-column: 1 / -1;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--text);
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="url"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      transition: 0.2s;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--primary);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 95px;
+    }
+
+    .checkbox-group {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      margin-top: 8px;
+    }
+
+    .checkbox-group label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      margin: 0;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+    }
+
+    .btn-secondary {
+      background: #EFEAFB;
+      color: var(--primary);
+      border: 1px solid #D5C8FA;
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* Login Box */
+    #loginSection {
+      max-width: 400px;
+      margin: 70px auto;
+    }
+
+    /* Prompt List Table/Cards */
+    .prompt-item {
+      display: flex;
+      gap: 14px;
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 12px;
+      align-items: center;
+      background: #FAFAFD;
+    }
+
+    .prompt-item img {
+      width: 72px;
+      height: 72px;
+      object-fit: cover;
+      border-radius: 8px;
+      background: #EAEAF2;
+    }
+
+    .prompt-info {
+      flex: 1;
+    }
+
+    .prompt-info h3 {
+      font-size: 15px;
+      margin-bottom: 4px;
+    }
+
+    .prompt-info p {
+      font-size: 12px;
+      color: var(--muted);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: #EFEAFB;
+      color: var(--primary);
+      font-weight: 600;
+      margin-right: 6px;
+      margin-top: 4px;
+    }
+
+    .btn-del {
+      background: #FFEBEE;
+      color: var(--danger);
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .btn-del:hover {
+      background: #FFCDD2;
+    }
+
+    .status-msg {
+      padding: 10px;
+      border-radius: 6px;
+      margin-bottom: 14px;
+      font-size: 13px;
+      display: none;
+    }
+
+    .status-success {
+      background: #E8F5E9;
+      color: var(--success);
+      display: block;
+    }
+
+    .status-error {
+      background: #FFEBEE;
+      color: var(--danger);
+      display: block;
+    }
+
+    .helper-box {
+      background: #F0EDFC;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      border-left: 4px solid var(--primary);
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <h1>✦ Photo Studio Admin Panel</h1>
+    <button id="btnLogout" class="btn-logout" style="display:none;" onclick="logout()">Logout</button>
+  </header>
+
+  <!-- LOGIN SECTION -->
+  <div id="loginSection" class="container">
+    <div class="card">
+      <h2>Admin Login</h2>
+      <div id="loginMsg" class="status-msg"></div>
+      <div class="form-group">
+        <label>Admin Email</label>
+        <input type="email" id="adminEmail" placeholder="admin@example.com">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="adminPassword" placeholder="••••••••">
+      </div>
+      <button class="btn-primary" onclick="login()">Login to Dashboard</button>
+    </div>
+  </div>
+
+  <!-- DASHBOARD SECTION -->
+  <div id="dashboardSection" class="container" style="display:none;">
+
+    <!-- Quick Prompt Generator Helper -->
+    <div class="card">
+      <h2>⚡ Quick AI Prompt Builder (প্রম্পট তৈরির সহজ টুল)</h2>
+      <div class="helper-box">
+        <p style="font-size: 13px; color: #383850;">ইংরেজি প্রম্পট লিখতে সমস্যা হলে নিচের অপশনগুলো সিলেক্ট করে
+          <b>"Generate Prompt"</b> চাপুন—অটোমেটিক প্রফেশনাল প্রম্পট তৈরি হয়ে নিচের বক্সে বসে যাবে!
+        </p>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Subject (কার ছবি?)</label>
+          <select id="genSubject">
+            <option value="a handsome young Bangladeshi man in stylish modern outfit">Young Man (ছেলে)</option>
+            <option value="a graceful young Bangladeshi woman in traditional aesthetic saree">Young Woman (মেয়ে)
+            </option>
+            <option value="a happy romantic couple in elegant wedding attire">Couple / Wedding (কাপল)</option>
+            <option value="a luxury commercial product placed on a sleek podium">Product Photo (প্রোডাক্ট)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Background & Lighting (ব্যাকগ্রাউন্ড ও আলো)</label>
+          <select id="genStyle">
+            <option value="cinematic moody golden hour sunlight, blurred bokeh city street background, 85mm lens">
+              Cinematic Golden Hour</option>
+            <option value="dramatic neon cyberpunk night rain reflections, dark moody atmosphere, rim lighting">Neon
+              Night Rain</option>
+            <option value="luxury minimalist studio backdrop, soft studio rim light, clean aesthetic shadows">Clean
+              Studio Luxury</option>
+            <option value="traditional festive Eid evening lights, warm glowing lanterns, royal palace courtyard">Eid &
+              Festive Lights</option>
+          </select>
+        </div>
+      </div>
+      <button type="button" class="btn-secondary" onclick="generateAutoPrompt()">✨ Generate & Fill Prompt</button>
+    </div>
+
+    <!-- Add New Prompt Form -->
+    <div class="card">
+      <h2>➕ Add New AI Prompt</h2>
+      <div id="formMsg" class="status-msg"></div>
+
+      <form id="promptForm" onsubmit="savePrompt(event)">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Category *</label>
+            <select id="categoryId" required>
+              <option value="">Loading categories...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Cloudflare R2 Image URL (WebP/JPG) *</label>
+            <input type="url" id="imageUrl" placeholder="https://pub-xxxx.r2.dev/prompts/pic1.webp" required>
+          </div>
+          <div class="form-group">
+            <label>Prompt Title (English) *</label>
+            <input type="text" id="titleEn" placeholder="e.g. Cinematic Golden Hour Portrait" required>
+          </div>
+          <div class="form-group">
+            <label>Prompt Title (বাংলা - ঐচ্ছিক)</label>
+            <input type="text" id="titleBn" placeholder="যেমন: সিনেমাটিক গোল্ডেন আওয়ার পোর্ট্রেট">
+          </div>
+          <div class="form-group full-width">
+            <label>Full AI Prompt Text *</label>
+            <textarea id="promptText" placeholder="Write or paste the detailed AI prompt here..." required></textarea>
+          </div>
+          <div class="form-group full-width">
+            <label>AI Tool Usage Guide (বাংলায় নির্দেশনা)</label>
+            <input type="text" id="aiGuide"
+              value="১. Copy Prompt বাটনে চাপ দিন। ২. Gemini বা ChatGPT-তে আপনার ছবি আপলোড করে এই Prompt-টি পেস্ট করুন।">
+          </div>
+          <div class="form-group full-width">
+            <div class="checkbox-group">
+              <label><input type="checkbox" id="isFeatured"> Featured (হোম স্ক্রিনে দেখাবে)</label>
+              <label><input type="checkbox" id="isTrending"> Trending</label>
+            </div>
+          </div>
+        </div>
+        <button type="submit" id="btnSubmit" class="btn-primary">Publish Prompt to App</button>
+      </form>
+    </div>
+
+    <!-- Existing Prompts List -->
+    <div class="card">
+      <h2>📋 Published Prompts (<span id="promptCount">0</span>)</h2>
+      <div id="promptsList">Loading prompts...</div>
+    </div>
+
+  </div>
+
+  <script>
+    // ==========================================
+    // তোমার SUPABASE URL এবং ANON PUBLIC KEY বসাও
+    // ==========================================
+    const SUPABASE_URL = 'https://spmbgjupclbpqcbrmctk.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_HYzHpFq_Z8hrL4kKHeSHLw_ZAKqbCYG';
+
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Check session on page load
+    window.addEventListener('DOMContentLoaded', async () => {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (session) {
+        showDashboard();
+      }
+    });
+
+    async function login() {
+      const email = document.getElementById('adminEmail').value.trim();
+      const password = document.getElementById('adminPassword').value.trim();
+      const msg = document.getElementById('loginMsg');
+
+      if (!email || !password) {
+        showMsg(msg, 'ইমেইল এবং পাসওয়ার্ড দিন।', false);
+        return;
+      }
+
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      if (error) {
+        showMsg(msg, 'Login ব্যর্থ হয়েছে: ' + error.message, false);
+      } else {
+        showDashboard();
+      }
+    }
+
+    async function logout() {
+      await supabaseClient.auth.signOut();
+      document.getElementById('dashboardSection').style.display = 'none';
+      document.getElementById('btnLogout').style.display = 'none';
+      document.getElementById('loginSection').style.display = 'block';
+    }
+
+    function showDashboard() {
+      document.getElementById('loginSection').style.display = 'none';
+      document.getElementById('dashboardSection').style.display = 'block';
+      document.getElementById('btnLogout').style.display = 'inline-block';
+      loadCategories();
+      loadPrompts();
+    }
+
+    async function loadCategories() {
+      const { data, error } = await supabaseClient
+        .from('categories')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+
+      const select = document.getElementById('categoryId');
+      select.innerHTML = '<option value="">-- Select Category --</option>';
+      if (data) {
+        data.forEach(cat => {
+          select.innerHTML += `<option value="${cat.id}">${cat.icon_name || ''} ${cat.name} (${cat.name_bn || ''})</option>`;
+        });
+      }
+    }
+
+    function generateAutoPrompt() {
+      const subject = document.getElementById('genSubject').value;
+      const style = document.getElementById('genStyle').value;
+      const generated = `Ultra-realistic 8K DSLR portrait photography of ${subject}, keeping exact facial features and identity from reference image, ${style}, sharp focus, natural skin texture, shallow depth of field, professional color grading, photorealistic masterpiece.`;
+      document.getElementById('promptText').value = generated;
+    }
+
+    async function savePrompt(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btnSubmit');
+      const msg = document.getElementById('formMsg');
+      btn.disabled = true;
+      btn.innerText = 'Publishing...';
+
+      const payload = {
+        category_id: document.getElementById('categoryId').value,
+        preview_image_url: document.getElementById('imageUrl').value.trim(),
+        title: document.getElementById('titleEn').value.trim(),
+        title_bn: document.getElementById('titleBn').value.trim(),
+        prompt_text: document.getElementById('promptText').value.trim(),
+        ai_tool_guide: document.getElementById('aiGuide').value.trim(),
+        is_featured: document.getElementById('isFeatured').checked,
+        is_trending: document.getElementById('isTrending').checked
+      };
+
+      const { error } = await supabaseClient.from('prompts').insert([payload]);
+
+      btn.disabled = false;
+      btn.innerText = 'Publish Prompt to App';
+
+      if (error) {
+        showMsg(msg, 'Error: ' + error.message, false);
+      } else {
+        showMsg(msg, 'সফলভাবে প্রম্পট পাবলিশ হয়েছে! এখন অ্যাপে দেখা যাবে।', true);
+        document.getElementById('promptForm').reset();
+        loadPrompts();
+      }
+    }
+
+    async function loadPrompts() {
+      const container = document.getElementById('promptsList');
+      const { data, error } = await supabaseClient
+        .from('prompts')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        container.innerHTML = 'Error loading prompts.';
+        return;
+      }
+
+      document.getElementById('promptCount').innerText = data.length;
+      if (data.length === 0) {
+        container.innerHTML = '<p style="color:#777;">এখনো কোনো প্রম্পট যোগ করা হয়নি।</p>';
+        return;
+      }
+
+      container.innerHTML = data.map(item => `
+            <div class="prompt-item">
+                <img src="${item.preview_image_url}" alt="preview">
+                <div class="prompt-info">
+                    <h3>${item.title}</h3>
+                    <p>${item.prompt_text}</p>
+                    ${item.is_featured ? '<span class="badge">Featured</span>' : ''}
+                    ${item.is_trending ? '<span class="badge">Trending</span>' : ''}
+                </div>
+                <button class="btn-del" onclick="deletePrompt('${item.id}')">Delete</button>
+            </div>
+        `).join('');
+    }
+
+    async function deletePrompt(id) {
+      if (!confirm('আপনি কি নিশ্চিতভাবে এই প্রম্পটটি ডিলিট করতে চান?')) return;
+      const { error } = await supabaseClient.from('prompts').delete().eq('id', id);
+      if (!error) loadPrompts();
+    }
+
+    function showMsg(el, text, isSuccess) {
+      el.innerText = text;
+      el.className = 'status-msg ' + (isSuccess ? 'status-success' : 'status-error');
+      setTimeout(() => { el.style.display = 'none'; }, 5000);
+    }
+  </script>
+</body>
+
+</html>
